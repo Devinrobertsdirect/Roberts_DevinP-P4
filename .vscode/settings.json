@@ -1,0 +1,16 @@
+{
+    "python.defaultInterpreterPath": "C:\\Users\\devin\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+    "python.analysis.extraPaths": [],
+    "python.analysis.autoImportCompletions": true,
+    "python.languageServer": "None",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.terminal.activateEnvironment": false,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.python",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    }
+}
+
