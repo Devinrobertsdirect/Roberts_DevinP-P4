@@ -110,11 +110,57 @@ class HandTracker:
 
                     'handedness': handedness_label,
 
-                    'score': float(score)
+                    'score': float(score),
+
+                    'landmarks_obj': hand_landmarks  # Store original MediaPipe object for text positioning
 
                 })
 
-        return annotated, hands
+        return annotated, hands, results
+
+
+    def draw_gesture_text(self, frame, gesture_name, confidence, hand_landmarks=None):
+        """
+        Draw gesture name and confidence as text overlay on the frame.
+        If hand_landmarks provided, draw near the hand position.
+        """
+        h, w = frame.shape[:2]
+        
+        # Get position - if hand detected, use wrist position, otherwise center-top
+        if hand_landmarks is not None:
+            # Convert normalized to pixel coordinates
+            wrist = hand_landmarks.landmark[0]
+            x = int(wrist.x * w)
+            y = int(wrist.y * h) - 50  # Above the wrist
+        else:
+            x = w // 2
+            y = 50
+        
+        # Format text
+        gesture_display = gesture_name.replace('_', ' ').title()
+        text = f"{gesture_display}"
+        conf_text = f"{confidence:.0%}"
+        
+        # Background rectangle for better visibility
+        (text_w, text_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.2, 3)
+        conf_w, _ = cv2.getTextSize(conf_text, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)[0]
+        
+        # Draw background
+        cv2.rectangle(frame, 
+                     (x - 10, y - text_h - 40), 
+                     (x + max(text_w, conf_w) + 10, y + 10), 
+                     (0, 0, 0), -1)
+        
+        # Draw gesture name (large, bold, color based on confidence)
+        color = (0, 255, 0) if confidence > 0.7 else (0, 255, 255) if confidence > 0.4 else (0, 165, 255)
+        cv2.putText(frame, text, (x, y), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3, cv2.LINE_AA)
+        
+        # Draw confidence
+        cv2.putText(frame, conf_text, (x, y + 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        return frame
 
 
 

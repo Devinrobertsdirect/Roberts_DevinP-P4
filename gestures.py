@@ -175,6 +175,144 @@ def is_fist(landmarks, fist_threshold=0.06):
     return (avg_dist < fist_threshold), avg_dist
 
 
+def is_thumbs_up(landmarks, thumb_up_threshold=0.15):
+    """
+    Thumbs up detection: thumb extended upward, other fingers closed.
+    Check if thumb tip is above thumb MCP and other fingers are close to wrist.
+    """
+    thumb_tip = landmarks[4]
+    thumb_mcp = landmarks[2]
+    wrist = landmarks[0]
+    
+    # Thumb extended upward (y decreases upward in normalized coords)
+    thumb_extended = thumb_tip[1] < thumb_mcp[1] - 0.05
+    
+    # Other fingers closed (index, middle, ring, pinky tips close to wrist)
+    other_fingers = np.array([
+        landmarks[8],  # index
+        landmarks[12], # middle
+        landmarks[16], # ring
+        landmarks[20]  # pinky
+    ])
+    avg_other_dist = float(np.mean([normalized_distance(t, wrist) for t in other_fingers]))
+    
+    is_closed = avg_other_dist < 0.08
+    return (thumb_extended and is_closed), float(thumb_tip[1] - thumb_mcp[1])
+
+
+def is_peace_sign(landmarks, peace_threshold=0.10):
+    """
+    Peace sign (V sign): Index and middle finger extended, others closed.
+    """
+    index_tip = landmarks[8]
+    middle_tip = landmarks[12]
+    ring_tip = landmarks[16]
+    pinky_tip = landmarks[20]
+    wrist = landmarks[0]
+    
+    # Index and middle extended
+    index_extended = normalized_distance(index_tip, wrist) > peace_threshold
+    middle_extended = normalized_distance(middle_tip, wrist) > peace_threshold
+    
+    # Ring and pinky closed
+    ring_closed = normalized_distance(ring_tip, wrist) < 0.07
+    pinky_closed = normalized_distance(pinky_tip, wrist) < 0.07
+    
+    # Index and middle should be separated (not too close)
+    index_middle_sep = normalized_distance(index_tip, middle_tip) > 0.03
+    
+    is_peace = index_extended and middle_extended and ring_closed and pinky_closed and index_middle_sep
+    avg_extended = float(np.mean([normalized_distance(index_tip, wrist), normalized_distance(middle_tip, wrist)]))
+    return is_peace, avg_extended
+
+
+def is_ok_sign(landmarks, ok_threshold=0.04):
+    """
+    OK sign: Thumb and index finger form a circle, other fingers extended.
+    """
+    thumb_tip = landmarks[4]
+    index_tip = landmarks[8]
+    middle_tip = landmarks[12]
+    ring_tip = landmarks[16]
+    pinky_tip = landmarks[20]
+    wrist = landmarks[0]
+    
+    # Thumb and index close (forming circle)
+    thumb_index_dist = normalized_distance(thumb_tip, index_tip)
+    circle_formed = thumb_index_dist < ok_threshold
+    
+    # Other fingers extended
+    middle_extended = normalized_distance(middle_tip, wrist) > 0.10
+    ring_extended = normalized_distance(ring_tip, wrist) > 0.10
+    pinky_extended = normalized_distance(pinky_tip, wrist) > 0.10
+    
+    is_ok = circle_formed and middle_extended and ring_extended and pinky_extended
+    return is_ok, float(thumb_index_dist)
+
+
+def is_rock_on(landmarks, rock_threshold=0.10):
+    """
+    Rock on: Index and pinky extended, middle and ring closed.
+    """
+    index_tip = landmarks[8]
+    middle_tip = landmarks[12]
+    ring_tip = landmarks[16]
+    pinky_tip = landmarks[20]
+    wrist = landmarks[0]
+    
+    # Index and pinky extended
+    index_extended = normalized_distance(index_tip, wrist) > rock_threshold
+    pinky_extended = normalized_distance(pinky_tip, wrist) > rock_threshold
+    
+    # Middle and ring closed
+    middle_closed = normalized_distance(middle_tip, wrist) < 0.07
+    ring_closed = normalized_distance(ring_tip, wrist) < 0.07
+    
+    is_rock = index_extended and pinky_extended and middle_closed and ring_closed
+    avg_extended = float(np.mean([normalized_distance(index_tip, wrist), normalized_distance(pinky_tip, wrist)]))
+    return is_rock, avg_extended
+
+
+def is_number_gesture(landmarks):
+    """
+    Detect number gestures (1-5) based on extended fingers.
+    Returns: (is_number, number, confidence)
+    """
+    wrist = landmarks[0]
+    thumb_tip = landmarks[4]
+    index_tip = landmarks[8]
+    middle_tip = landmarks[12]
+    ring_tip = landmarks[16]
+    pinky_tip = landmarks[20]
+    
+    # Threshold for extended finger
+    extend_threshold = 0.10
+    
+    thumb_ext = normalized_distance(thumb_tip, wrist) > extend_threshold
+    index_ext = normalized_distance(index_tip, wrist) > extend_threshold
+    middle_ext = normalized_distance(middle_tip, wrist) > extend_threshold
+    ring_ext = normalized_distance(ring_tip, wrist) > extend_threshold
+    pinky_ext = normalized_distance(pinky_tip, wrist) > extend_threshold
+    
+    # Count extended fingers (thumb counts separately)
+    extended = [index_ext, middle_ext, ring_ext, pinky_ext]
+    count = sum(extended)
+    
+    # Number 1-4 based on index-middle-ring-pinky
+    if count == 1 and index_ext:
+        return True, 1, 0.8
+    elif count == 2 and index_ext and middle_ext:
+        return True, 2, 0.8
+    elif count == 3 and index_ext and middle_ext and ring_ext:
+        return True, 3, 0.8
+    elif count == 4 and index_ext and middle_ext and ring_ext and pinky_ext:
+        return True, 4, 0.8
+    elif count == 4 and thumb_ext:  # All 5 fingers including thumb
+        return True, 5, 0.8
+    
+    return False, 0, 0.0
+
+
 
 # Simple logger for saving labeled samples (used for training later)
 

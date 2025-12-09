@@ -14,7 +14,8 @@ from camera import Webcam
 
 from tracker import HandTracker
 
-from gestures import is_pinch, is_open_hand, is_fist, compute_features, DataLogger
+from gestures import (is_pinch, is_open_hand, is_fist, is_thumbs_up, is_peace_sign, 
+                      is_ok_sign, is_rock_on, is_number_gesture, compute_features, DataLogger)
 
 from controller import ActionController
 
@@ -38,7 +39,7 @@ def heuristic_gesture_classifier(landmarks):
 
     Return (gesture_name, confidence, extra)
 
-    Simple logic combining heuristic detectors. Confidence is heuristic score [0,1]
+    Expanded gesture detection with priority-based classification.
 
     """
 
@@ -52,71 +53,91 @@ def heuristic_gesture_classifier(landmarks):
 
 
 
+    # Check all gestures (priority order matters)
+    # Basic action gestures checked first for reliability
+    
+    # 1. Pinch (high priority - common action gesture)
     pinch, d_pin = is_pinch(landmarks, thresh=0.05)
-
-    openh, avg_open = is_open_hand(landmarks, open_threshold=0.11)
-
-    fist, avg_fist = is_fist(landmarks, fist_threshold=0.06)
-
-
-
-    # heuristics priority
-
     if pinch:
-
         name = 'pinch'
-
-        # give higher confidence for very close pinch
-
         conf = float(max(0.6, min(1.0, 0.4 + (0.05 - d_pin) * 20)))
-
         extra['pinch_distance'] = d_pin
-
-        # determine state (simple toggle): if extremely close -> start drag else single click
-
         extra['pinch_state'] = 'start' if d_pin < 0.035 else 'hold'
+        extra['gesture_type'] = 'action'
+        return name, conf, extra
 
-
-
-    elif fist:
-
+    # 2. Fist (high priority - common action gesture)
+    fist, avg_fist = is_fist(landmarks, fist_threshold=0.06)
+    if fist:
         name = 'fist'
-
         conf = float(min(1.0, 0.6 + (0.06 - avg_fist) * 10))
+        extra['gesture_type'] = 'action'
+        return name, conf, extra
 
+    # 3. OK sign (specific gesture - check before open hand)
+    ok_gesture, ok_dist = is_ok_sign(landmarks)
+    if ok_gesture:
+        name = 'ok_sign'
+        conf = float(max(0.7, min(1.0, 0.8 + (0.04 - ok_dist) * 50)))
+        extra['gesture_type'] = 'symbol'
+        return name, conf, extra
+    
+    # 4. Thumbs up
+    thumbs_up, thumb_y = is_thumbs_up(landmarks)
+    if thumbs_up:
+        name = 'thumbs_up'
+        conf = float(max(0.7, min(1.0, 0.75 + abs(thumb_y) * 10)))
+        extra['gesture_type'] = 'symbol'
+        return name, conf, extra
+    
+    # 5. Peace sign
+    peace, peace_avg = is_peace_sign(landmarks)
+    if peace:
+        name = 'peace_sign'
+        conf = float(max(0.7, min(1.0, 0.75 + (peace_avg - 0.10) * 5)))
+        extra['gesture_type'] = 'symbol'
+        return name, conf, extra
+    
+    # 6. Rock on
+    rock, rock_avg = is_rock_on(landmarks)
+    if rock:
+        name = 'rock_on'
+        conf = float(max(0.7, min(1.0, 0.75 + (rock_avg - 0.10) * 5)))
+        extra['gesture_type'] = 'symbol'
+        return name, conf, extra
+    
+    # 7. Number gestures
+    is_num, number, num_conf = is_number_gesture(landmarks)
+    if is_num:
+        name = f'number_{number}'
+        conf = num_conf
+        extra['gesture_type'] = 'number'
+        extra['number'] = number
+        return name, conf, extra
 
-
-    elif openh:
-
-        # check for index pointing: index finger farther from wrist than middle/pinky to detect pointing
-
+    # 8. Open hand / Open palm / Index point (check last as it's most general)
+    openh, avg_open = is_open_hand(landmarks, open_threshold=0.11)
+    if openh:
+        # Check for index pointing (more specific than open palm)
         idx = landmarks[8]
-
         wrist = landmarks[0]
-
         idx_dist = np.linalg.norm(idx - wrist)
-
         avg_other = np.mean([np.linalg.norm(landmarks[i] - wrist) for i in [12,16,20]])
-
+        
         if idx_dist > avg_other * 1.1:
-
             name = 'index_point'
-
             conf = float(min(1.0, 0.6 + (idx_dist - avg_other) * 10))
-
+            extra['gesture_type'] = 'action'
         else:
-
-            name = 'open'
-
+            name = 'open_hand'  # Also called 'open_palm'
             conf = float(min(1.0, 0.5 + (avg_open - 0.11) * 5))
+            extra['gesture_type'] = 'basic'
+        return name, conf, extra
 
-    else:
-
-        name = 'unknown'
-
-        conf = 0.1
-
-
+    # Default: unknown
+    name = 'unknown'
+    conf = 0.1
+    extra['gesture_type'] = 'unknown'
 
     return name, conf, extra
 
@@ -153,7 +174,7 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
             if stop_event.is_set():
                 break
 
-            annotated, hands = tracker.process(frame)  # annotated has MP drawings
+            annotated, hands, mp_results = tracker.process(frame)  # annotated has MP drawings
 
             # determine FPS
             now = time.time()
@@ -165,11 +186,21 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
             confidence = 0.0
 
             # process first detected hand only for R&D prototype
+            hand_landmarks_obj = None
             if len(hands) > 0:
                 primary = hands[0]
                 lms = primary['landmarks']  # normalized 21x3
+                
+                # Get hand landmarks object for text overlay positioning
+                hand_landmarks_obj = primary.get('landmarks_obj', None)
+                
                 # heuristic classifier
                 gesture_label, confidence, extra = heuristic_gesture_classifier(lms)
+                
+                # Draw gesture text overlay on frame
+                if gesture_label != 'unknown' and confidence > 0.3:
+                    annotated = tracker.draw_gesture_text(annotated, gesture_label, confidence, hand_landmarks_obj)
+                
                 # call controller to perform action
                 try:
                     controller.perform_gesture_action(gesture_label, lms, FRAME_W, FRAME_H, extra=extra)
@@ -180,6 +211,8 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                         pass
             else:
                 extra = {}
+                gesture_label = 'none'
+                confidence = 0.0
 
             # Queue updates for UI (thread-safe)
             update_data = {
@@ -241,7 +274,7 @@ def main_loop():
     cam = Webcam(device_index=DEVICE_INDEX, width=FRAME_W, height=FRAME_H)
     tracker = HandTracker()
     controller = ActionController()
-    ui = SimpleUI(width=800, height=600)
+    ui = SimpleUI(width=1000, height=700)
     datalog = DataLogger(path='gesture_samples.csv')
 
     stop_event = threading.Event()

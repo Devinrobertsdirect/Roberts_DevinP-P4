@@ -172,6 +172,7 @@ class ActionController:
 
 
 
+        # Action gestures (control mouse/keyboard)
         if gesture_name == 'point' or gesture_name == 'index_point':
 
             # move mouse using index tip
@@ -185,8 +186,6 @@ class ActionController:
         elif gesture_name == 'pinch':
 
             # pinch -> drag (start/stop)
-
-            # if pinch started, press and hold
 
             if extra and extra.get('pinch_state') == 'start':
 
@@ -212,15 +211,27 @@ class ActionController:
 
 
 
-        elif gesture_name == 'open':
+        elif gesture_name == 'open' or gesture_name == 'open_hand' or gesture_name == 'open_palm':
 
-            # e.g., stop drag if open
+            # stop drag if open palm/hand
 
             self.stop_drag()
+        
+        elif gesture_name.startswith('number_'):
+            # Number gestures - could map to keyboard numbers or custom actions
+            try:
+                number = int(gesture_name.split('_')[1])
+                # Example: scroll based on number
+                if number == 1:
+                    self.scroll(1)
+                elif number == 2:
+                    self.scroll(-1)
+            except:
+                pass
 
         else:
 
-            pass  # unknown gesture
+            pass  # Symbol gestures (thumbs_up, peace_sign, ok_sign, rock_on) and unknown gestures don't trigger actions
 
 
 
