@@ -54,10 +54,10 @@ def heuristic_gesture_classifier(landmarks):
 
 
     # Check all gestures (priority order matters)
-    # Basic action gestures checked first for reliability
+    # Mouse control gestures checked FIRST for reliable interaction
     
-    # 1. Pinch (high priority - common action gesture)
-    pinch, d_pin = is_pinch(landmarks, thresh=0.05)
+    # 1. Pinch (highest priority - common mouse action)
+    pinch, d_pin = is_pinch(landmarks, thresh=0.06)  # More forgiving threshold
     if pinch:
         name = 'pinch'
         conf = float(max(0.6, min(1.0, 0.4 + (0.05 - d_pin) * 20)))
@@ -66,15 +66,30 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
-    # 2. Fist (high priority - common action gesture)
-    fist, avg_fist = is_fist(landmarks, fist_threshold=0.06)
+    # 2. Fist (high priority - mouse action)
+    fist, avg_fist = is_fist(landmarks, fist_threshold=0.07)  # More forgiving threshold
     if fist:
         name = 'fist'
         conf = float(min(1.0, 0.6 + (0.06 - avg_fist) * 10))
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
-    # 3. OK sign (specific gesture - check before open hand)
+    # 3. Check for open hand first to determine if index pointing or open palm
+    openh_check, avg_open_check = is_open_hand(landmarks, open_threshold=0.11)
+    if openh_check:
+        idx = landmarks[8]
+        wrist = landmarks[0]
+        idx_dist = np.linalg.norm(idx - wrist)
+        avg_other = np.mean([np.linalg.norm(landmarks[i] - wrist) for i in [12,16,20]])
+        
+        # Index pointing detected (more specific - for mouse control)
+        if idx_dist > avg_other * 1.15:  # Made slightly more strict
+            name = 'index_point'
+            conf = float(min(1.0, 0.7 + (idx_dist - avg_other) * 10))
+            extra['gesture_type'] = 'action'
+            return name, conf, extra
+
+    # 4. OK sign (specific gesture - check before open palm)
     ok_gesture, ok_dist = is_ok_sign(landmarks)
     if ok_gesture:
         name = 'ok_sign'
@@ -82,7 +97,7 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'symbol'
         return name, conf, extra
     
-    # 4. Thumbs up
+    # 5. Thumbs up
     thumbs_up, thumb_y = is_thumbs_up(landmarks)
     if thumbs_up:
         name = 'thumbs_up'
@@ -90,7 +105,7 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'symbol'
         return name, conf, extra
     
-    # 5. Peace sign
+    # 6. Peace sign
     peace, peace_avg = is_peace_sign(landmarks)
     if peace:
         name = 'peace_sign'
@@ -98,41 +113,31 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'symbol'
         return name, conf, extra
     
-    # 6. Rock on
+    # 7. Rock on
     rock, rock_avg = is_rock_on(landmarks)
     if rock:
         name = 'rock_on'
         conf = float(max(0.7, min(1.0, 0.75 + (rock_avg - 0.10) * 5)))
         extra['gesture_type'] = 'symbol'
         return name, conf, extra
+
+    # 8. Open hand / Open palm (check before number gestures to avoid false positives)
+    if openh_check:
+        name = 'open_hand'  # Also called 'open_palm'
+        conf = float(min(1.0, 0.5 + (avg_open_check - 0.11) * 5))
+        extra['gesture_type'] = 'basic'
+        return name, conf, extra
     
-    # 7. Number gestures
+    # 9. Number gestures (lowest priority - only if other gestures don't match)
     is_num, number, num_conf = is_number_gesture(landmarks)
     if is_num:
-        name = f'number_{number}'
-        conf = num_conf
-        extra['gesture_type'] = 'number'
-        extra['number'] = number
-        return name, conf, extra
-
-    # 8. Open hand / Open palm / Index point (check last as it's most general)
-    openh, avg_open = is_open_hand(landmarks, open_threshold=0.11)
-    if openh:
-        # Check for index pointing (more specific than open palm)
-        idx = landmarks[8]
-        wrist = landmarks[0]
-        idx_dist = np.linalg.norm(idx - wrist)
-        avg_other = np.mean([np.linalg.norm(landmarks[i] - wrist) for i in [12,16,20]])
-        
-        if idx_dist > avg_other * 1.1:
-            name = 'index_point'
-            conf = float(min(1.0, 0.6 + (idx_dist - avg_other) * 10))
-            extra['gesture_type'] = 'action'
-        else:
-            name = 'open_hand'  # Also called 'open_palm'
-            conf = float(min(1.0, 0.5 + (avg_open - 0.11) * 5))
-            extra['gesture_type'] = 'basic'
-        return name, conf, extra
+        # Only accept if confidence is decent
+        if num_conf >= 0.7:
+            name = f'number_{number}'
+            conf = num_conf
+            extra['gesture_type'] = 'number'
+            extra['number'] = number
+            return name, conf, extra
 
     # Default: unknown
     name = 'unknown'

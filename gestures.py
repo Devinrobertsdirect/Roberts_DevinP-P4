@@ -112,11 +112,13 @@ def compute_features(landmarks):
 
 # Heuristic gesture detectors
 
-def is_pinch(landmarks, thresh=0.05):
+def is_pinch(landmarks, thresh=0.06):
 
     """
 
     Simple pinch detection: thumb_tip and index_tip close in normalized coords.
+
+    Slightly more forgiving threshold to catch pinch gestures reliably.
 
     Threshold tuned empirically; adjust per camera/resolution.
 
@@ -134,6 +136,8 @@ def is_open_hand(landmarks, open_threshold=0.10):
 
     Open-hand proxy: average distance of fingertips to wrist is large
 
+    More forgiving threshold to catch open palm gestures reliably.
+
     """
 
     tips = np.array([landmarks[TIP_IDS['index_tip']],
@@ -148,15 +152,18 @@ def is_open_hand(landmarks, open_threshold=0.10):
 
     avg_dist = float(np.mean([normalized_distance(t, wrist) for t in tips]))
 
+    # More forgiving threshold for open hand detection
     return (avg_dist > open_threshold), avg_dist
 
 
 
-def is_fist(landmarks, fist_threshold=0.06):
+def is_fist(landmarks, fist_threshold=0.07):
 
     """
 
     Fist proxy: average fingertip-to-wrist distance small.
+
+    Slightly more forgiving threshold to catch fist gestures reliably.
 
     """
 
@@ -276,6 +283,7 @@ def is_rock_on(landmarks, rock_threshold=0.10):
 def is_number_gesture(landmarks):
     """
     Detect number gestures (1-5) based on extended fingers.
+    Uses more strict thresholds to avoid false positives with open palm.
     Returns: (is_number, number, confidence)
     """
     wrist = landmarks[0]
@@ -285,30 +293,54 @@ def is_number_gesture(landmarks):
     ring_tip = landmarks[16]
     pinky_tip = landmarks[20]
     
-    # Threshold for extended finger
-    extend_threshold = 0.10
+    # Higher threshold for extended finger (more strict to avoid false positives)
+    extend_threshold = 0.14  # Increased from 0.10
     
+    # Check if fingers are WELL extended (not just slightly)
     thumb_ext = normalized_distance(thumb_tip, wrist) > extend_threshold
     index_ext = normalized_distance(index_tip, wrist) > extend_threshold
     middle_ext = normalized_distance(middle_tip, wrist) > extend_threshold
     ring_ext = normalized_distance(ring_tip, wrist) > extend_threshold
     pinky_ext = normalized_distance(pinky_tip, wrist) > extend_threshold
     
-    # Count extended fingers (thumb counts separately)
+    # Additional check: require fingers to be clearly separated
+    # For number 4, all fingers should be extended AND well separated
+    finger_tips = [index_tip, middle_tip, ring_tip, pinky_tip]
+    min_separation = 0.03  # Minimum distance between adjacent fingertips
+    
+    # Count extended fingers
     extended = [index_ext, middle_ext, ring_ext, pinky_ext]
     count = sum(extended)
     
-    # Number 1-4 based on index-middle-ring-pinky
-    if count == 1 and index_ext:
-        return True, 1, 0.8
-    elif count == 2 and index_ext and middle_ext:
-        return True, 2, 0.8
-    elif count == 3 and index_ext and middle_ext and ring_ext:
-        return True, 3, 0.8
+    # Check if this looks like an intentional number gesture vs. open palm
+    # For number 4, require all 4 fingers extended AND thumb should NOT be extended
+    # (open palm usually has thumb extended too)
+    
+    # Number 1: Only index extended
+    if count == 1 and index_ext and not middle_ext and not ring_ext and not pinky_ext:
+        return True, 1, 0.7
+    
+    # Number 2: Index and middle extended
+    elif count == 2 and index_ext and middle_ext and not ring_ext and not pinky_ext:
+        return True, 2, 0.7
+    
+    # Number 3: Index, middle, ring extended
+    elif count == 3 and index_ext and middle_ext and ring_ext and not pinky_ext:
+        return True, 3, 0.7
+    
+    # Number 4: All 4 fingers extended BUT thumb should NOT be extended (distinguishes from open palm)
     elif count == 4 and index_ext and middle_ext and ring_ext and pinky_ext:
-        return True, 4, 0.8
-    elif count == 4 and thumb_ext:  # All 5 fingers including thumb
-        return True, 5, 0.8
+        # Make it more strict - require thumb to be NOT extended or very close
+        thumb_dist = normalized_distance(thumb_tip, wrist)
+        if thumb_dist < 0.12:  # Thumb should be relatively closed for number 4
+            return True, 4, 0.75
+        else:
+            # Looks more like open palm, return False
+            return False, 0, 0.0
+    
+    # Number 5: All fingers including thumb extended
+    elif count == 4 and thumb_ext and index_ext and middle_ext and ring_ext and pinky_ext:
+        return True, 5, 0.7
     
     return False, 0, 0.0
 
