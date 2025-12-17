@@ -31,6 +31,10 @@ class TestMode:
         self.test_window = None
         self.is_active = False
         
+        # Timing protection: minimum time before task can be completed
+        self.min_task_duration = 3.0  # 3 seconds minimum
+        self.task_completion_pending = False
+        
     def show_test_window(self):
         """Show the test mode window"""
         if self.test_window is not None:
@@ -64,13 +68,18 @@ class TestMode:
         if not self.test_window:
             return
         
+        # Reset timing protection
+        self.task_completion_pending = False
+        if hasattr(self, 'pending_success'):
+            delattr(self, 'pending_success')
+        
         # Clear window
         for widget in self.test_window.winfo_children():
             widget.destroy()
         
         if self.current_task < len(self.get_tasks()):
             task = self.get_tasks()[self.current_task]
-            self.task_start_time = time.time()
+            self.task_start_time = time.time()  # Start timing for this task
             self.render_task(task)
         else:
             self.show_survey()
@@ -430,10 +439,26 @@ class TestMode:
             var = tk.StringVar(value="")
             self.survey_vars[q['id']] = var
             
+            # Track when each question is displayed (for timing protection)
+            if not hasattr(self, 'survey_question_times'):
+                self.survey_question_times = {}
+            self.survey_question_times[q['id']] = time.time()
+            
             if q['type'] == 'scale':
                 # 1-5 scale with high-tech styling
                 scale_frame = tk.Frame(content_frame, bg='#1a1f3a')
                 scale_frame.pack(anchor='w', padx=15, pady=5)
+                
+                def make_radio_callback(q_id):
+                    """Create callback that tracks selection time"""
+                    def on_select():
+                        # Mark that question has been viewed for at least minimum time
+                        if q_id in self.survey_question_times:
+                            elapsed = time.time() - self.survey_question_times[q_id]
+                            # If less than 3 seconds, update the time to ensure minimum viewing
+                            if elapsed < 3.0:
+                                self.survey_question_times[q_id] = time.time() - 3.0
+                    return on_select
                 
                 for j in range(1, 6):
                     rb = tk.Radiobutton(scale_frame, text=str(j), variable=var, value=str(j),
@@ -441,7 +466,8 @@ class TestMode:
                                        bg='#1a1f3a', fg='#B0BEC5',
                                        selectcolor='#00D9FF', 
                                        activebackground='#2a2f4a',
-                                       activeforeground='#00D9FF')
+                                       activeforeground='#00D9FF',
+                                       command=make_radio_callback(q['id']))
                     rb.pack(side=tk.LEFT, padx=12)
                 
                 labels_frame = tk.Frame(content_frame, bg='#1a1f3a')
@@ -455,18 +481,31 @@ class TestMode:
                 yesno_frame = tk.Frame(content_frame, bg='#1a1f3a')
                 yesno_frame.pack(anchor='w', padx=15, pady=(0, 10))
                 
+                def make_yesno_callback(q_id):
+                    """Create callback that tracks selection time"""
+                    def on_select():
+                        # Mark that question has been viewed for at least minimum time
+                        if q_id in self.survey_question_times:
+                            elapsed = time.time() - self.survey_question_times[q_id]
+                            # If less than 3 seconds, update the time to ensure minimum viewing
+                            if elapsed < 3.0:
+                                self.survey_question_times[q_id] = time.time() - 3.0
+                    return on_select
+                
                 tk.Radiobutton(yesno_frame, text="Yes", variable=var, value="yes",
                               font=('Segoe UI', 12, 'bold'), 
                               bg='#1a1f3a', fg='#B0BEC5',
                               selectcolor='#00D9FF', 
-                              activebackground='#2a2f4a',
-                              activeforeground='#00D9FF').pack(side=tk.LEFT, padx=20)
+                              activebackground='#2a3f4a',
+                              activeforeground='#00D9FF',
+                              command=make_yesno_callback(q['id'])).pack(side=tk.LEFT, padx=20)
                 tk.Radiobutton(yesno_frame, text="No", variable=var, value="no",
                               font=('Segoe UI', 12, 'bold'), 
                               bg='#1a1f3a', fg='#B0BEC5',
                               selectcolor='#00D9FF', 
-                              activebackground='#2a2f4a',
-                              activeforeground='#00D9FF').pack(side=tk.LEFT, padx=20)
+                              activebackground='#2a3f4a',
+                              activeforeground='#00D9FF',
+                              command=make_yesno_callback(q['id'])).pack(side=tk.LEFT, padx=20)
         
         canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         scrollbar.pack(side="right", fill="y")
@@ -519,7 +558,18 @@ class TestMode:
         ]
     
     def submit_survey(self):
-        """Submit survey and save results"""
+        """Submit survey and save results (with timing protection)"""
+        # Check that all questions have been displayed for at least 3 seconds
+        current_time = time.time()
+        min_viewing_time = 3.0
+        
+        for q_id, question_time in getattr(self, 'survey_question_times', {}).items():
+            elapsed = current_time - question_time
+            if elapsed < min_viewing_time:
+                # Can't submit yet - show message
+                remaining = min_viewing_time - elapsed
+                return  # Silently prevent submission until minimum time has passed
+        
         # Collect answers
         for q_id, var in self.survey_vars.items():
             self.survey_answers[q_id] = var.get()
