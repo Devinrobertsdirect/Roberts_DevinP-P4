@@ -69,27 +69,29 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
-    # 2. Pinky finger point (high priority - right-click action)
-    # More reliable than fist - only pinky finger extended, others closed
-    pinky_point, pinky_conf = is_pinky_point(landmarks, extend_threshold=0.12, close_threshold=0.08)
-    if pinky_point:
-        name = 'pinky_point'
-        conf = pinky_conf
-        extra['gesture_type'] = 'action'
-        return name, conf, extra
-
-    # 3. Check for open hand first to determine if index pointing or open palm
+    # 2. Check for open hand first to determine if index pointing, pinky pointing, or open palm
     openh_check, avg_open_check = is_open_hand(landmarks, open_threshold=0.11)
     if openh_check:
         idx = landmarks[8]
+        pinky = landmarks[20]
         wrist = landmarks[0]
         idx_dist = np.linalg.norm(idx - wrist)
-        avg_other = np.mean([np.linalg.norm(landmarks[i] - wrist) for i in [12,16,20]])
+        pinky_dist = np.linalg.norm(pinky - wrist)
+        avg_other_for_index = np.mean([np.linalg.norm(landmarks[i] - wrist) for i in [12,16,20]])  # middle, ring, pinky
+        avg_other_for_pinky = np.mean([np.linalg.norm(landmarks[i] - wrist) for i in [8,12,16]])   # index, middle, ring
         
-        # Index pointing detected (more specific - for mouse control)
-        if idx_dist > avg_other * 1.15:  # Made slightly more strict
+        # Index pointing detected (for mouse movement) - check first
+        if idx_dist > avg_other_for_index * 1.15:
             name = 'index_point'
-            conf = float(min(1.0, 0.7 + (idx_dist - avg_other) * 10))
+            conf = float(min(1.0, 0.7 + (idx_dist - avg_other_for_index) * 10))
+            extra['gesture_type'] = 'action'
+            return name, conf, extra
+        
+        # Pinky pointing detected (for right-click, no mouse movement) - check after index
+        pinky_point, pinky_conf = is_pinky_point(landmarks, extend_threshold=0.12)
+        if pinky_point:
+            name = 'pinky_point'
+            conf = pinky_conf
             extra['gesture_type'] = 'action'
             return name, conf, extra
 

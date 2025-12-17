@@ -184,10 +184,11 @@ def is_fist(landmarks, fist_threshold=0.07):
     return (avg_dist < fist_threshold), avg_dist
 
 
-def is_pinky_point(landmarks, extend_threshold=0.12, close_threshold=0.08):
+def is_pinky_point(landmarks, extend_threshold=0.12):
     """
-    Pinky finger point: Only pinky finger extended, all other fingers closed.
-    This is a more reliable gesture for right-click than fist.
+    Pinky finger point: Pinky finger extended more than others (similar to index point detection).
+    This allows the hand to be more open, making it as reliable as index point detection.
+    Used for right-click without moving the mouse.
     
     Returns: (is_pinky_point, confidence)
     """
@@ -195,38 +196,32 @@ def is_pinky_point(landmarks, extend_threshold=0.12, close_threshold=0.08):
     middle_tip = landmarks[TIP_IDS['middle_tip']]
     ring_tip = landmarks[TIP_IDS['ring_tip']]
     pinky_tip = landmarks[TIP_IDS['pinky_tip']]
-    thumb_tip = landmarks[TIP_IDS['thumb_tip']]
     wrist = landmarks[TIP_IDS['wrist']]
     
-    # Pinky finger extended (far from wrist)
-    pinky_extended = normalized_distance(pinky_tip, wrist) > extend_threshold
-    
-    # All other fingers closed (close to wrist)
-    index_closed = normalized_distance(index_tip, wrist) < close_threshold
-    middle_closed = normalized_distance(middle_tip, wrist) < close_threshold
-    ring_closed = normalized_distance(ring_tip, wrist) < close_threshold
-    thumb_closed = normalized_distance(thumb_tip, wrist) < close_threshold
-    
-    # Check that pinky is clearly the furthest extended
+    # Calculate distances from wrist for all fingers
     pinky_dist = normalized_distance(pinky_tip, wrist)
-    other_dists = [
-        normalized_distance(index_tip, wrist),
-        normalized_distance(middle_tip, wrist),
-        normalized_distance(ring_tip, wrist),
-        normalized_distance(thumb_tip, wrist)
-    ]
-    max_other_dist = max(other_dists)
+    index_dist = normalized_distance(index_tip, wrist)
+    middle_dist = normalized_distance(middle_tip, wrist)
+    ring_dist = normalized_distance(ring_tip, wrist)
     
-    # Pinky should be significantly more extended than others
-    pinky_dominates = pinky_dist > max_other_dist + 0.04
+    # Pinky should be extended (far from wrist)
+    pinky_extended = pinky_dist > extend_threshold
     
-    is_pinky_point_gesture = pinky_extended and index_closed and middle_closed and ring_closed and pinky_dominates
+    # Pinky should be more extended than other fingers (similar to index point logic)
+    # Check that pinky is clearly the furthest extended
+    avg_other = np.mean([index_dist, middle_dist, ring_dist])
     
-    # Confidence based on how extended pinky is and how closed others are
+    # Pinky should be significantly more extended than the average of others
+    # Using similar threshold to index point (1.15x)
+    pinky_dominates = pinky_dist > avg_other * 1.15
+    
+    is_pinky_point_gesture = pinky_extended and pinky_dominates
+    
+    # Confidence based on how much pinky dominates (similar to index point)
     if is_pinky_point_gesture:
-        extend_score = min(1.0, (pinky_dist - extend_threshold) / 0.08)  # Normalize 0.12-0.20 range
-        close_score = min(1.0, (close_threshold - max_other_dist) / close_threshold)
-        confidence = float((extend_score + close_score) / 2.0)
+        # Similar confidence calculation to index point
+        dominance_ratio = pinky_dist / (avg_other + 0.001)  # Avoid division by zero
+        confidence = float(min(1.0, 0.7 + (dominance_ratio - 1.15) * 10))
     else:
         confidence = 0.0
     
