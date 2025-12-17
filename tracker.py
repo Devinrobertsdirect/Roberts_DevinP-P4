@@ -162,6 +162,63 @@ class HandTracker:
         
         return frame
 
+    def draw_click_feedback(self, frame, hand_landmarks, gesture_name, click_strength=0.0):
+        """
+        Draw visual feedback for clicks - circles around fingertips that fill with color.
+        click_strength: 0.0 to 1.0, how much the circle is filled
+        """
+        if hand_landmarks is None:
+            return frame
+        
+        h, w = frame.shape[:2]
+        
+        # Determine which finger to highlight based on gesture
+        finger_indices = []
+        circle_color = (0, 255, 0)  # Green by default
+        
+        if gesture_name == 'pinch':
+            # Highlight thumb and index for pinch
+            finger_indices = [4, 8]  # thumb tip, index tip
+            circle_color = (255, 100, 100)  # Light blue/cyan
+        elif gesture_name == 'fist':
+            # Highlight all fingertips for fist (right click)
+            finger_indices = [4, 8, 12, 16, 20]  # All tips
+            circle_color = (100, 100, 255)  # Red/pink
+        elif gesture_name == 'index_point':
+            # Highlight index for pointing
+            finger_indices = [8]  # index tip
+            circle_color = (100, 255, 100)  # Green
+        else:
+            # Default: highlight index
+            finger_indices = [8]
+        
+        # Draw circles around fingertips
+        for idx in finger_indices:
+            landmark = hand_landmarks.landmark[idx]
+            x = int(landmark.x * w)
+            y = int(landmark.y * h)
+            
+            # Base circle radius
+            radius = 30
+            
+            # Draw outer circle (outline)
+            cv2.circle(frame, (x, y), radius, circle_color, 3)
+            
+            # Draw filled circle based on click_strength
+            if click_strength > 0.1:
+                fill_radius = int(radius * click_strength)
+                # Gradient effect - brighter in center
+                fill_color = tuple(int(c * (0.5 + click_strength * 0.5)) for c in circle_color)
+                cv2.circle(frame, (x, y), fill_radius, fill_color, -1)
+                
+                # Add glow effect for strong clicks
+                if click_strength > 0.7:
+                    glow_radius = int(radius * 1.3)
+                    glow_color = tuple(int(c * 0.3) for c in circle_color)
+                    cv2.circle(frame, (x, y), glow_radius, glow_color, 2)
+        
+        return frame
+
 
 
     def close(self):

@@ -1,7 +1,7 @@
 # ui.py
 
-# Modern Tkinter UI with improved styling and layout
-# Shows live feed, gesture label, confidence, FPS, and debug log.
+# High-tech Ironman-inspired UI with dark blue aesthetic
+# Production-ready design with sleek styling
 
 import tkinter as tk
 from tkinter import ttk
@@ -13,130 +13,227 @@ import queue
 
 
 class SimpleUI:
-    def __init__(self, width=1000, height=700, title="Hand Gesture Control R&D"):
+    def __init__(self, width=1000, height=700, title="ACERA Hand Gesture Control"):
         self.root = tk.Tk()
         self.root.title(title)
-        self.root.configure(bg='#1e1e1e')  # Dark theme background
+        self.root.configure(bg='#0a1628')  # Dark navy blue - ironman aesthetic
         self.width = width
         self.height = height
+        
+        # High-tech color palette
+        self.colors = {
+            'bg_dark': '#0a1628',      # Deep navy
+            'bg_medium': '#1a1f3a',    # Dark blue-gray
+            'bg_light': '#2a2f4a',     # Lighter blue-gray
+            'accent_cyan': '#00D9FF',  # Bright cyan (ironman arc)
+            'accent_blue': '#0066FF',  # Electric blue
+            'accent_light': '#4A9EFF', # Light blue
+            'text_primary': '#ffffff',
+            'text_secondary': '#B0BEC5',  # Light gray-blue
+            'text_muted': '#64748B',      # Muted gray
+            'success': '#00E676',         # Green-cyan
+            'warning': '#FFB300',         # Amber
+            'error': '#FF5252'            # Red
+        }
         
         # Configure modern styling
         style = ttk.Style()
         style.theme_use('clam')
-        style.configure('Title.TLabel', font=('Segoe UI', 16, 'bold'), background='#1e1e1e', foreground='#ffffff')
-        style.configure('Info.TLabel', font=('Segoe UI', 10), background='#2d2d2d', foreground='#ffffff')
-        style.configure('Header.TLabel', font=('Segoe UI', 11, 'bold'), background='#2d2d2d', foreground='#4CAF50')
         
-        # Main container with padding
-        main_container = tk.Frame(self.root, bg='#1e1e1e')
-        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Main container
+        main_container = tk.Frame(self.root, bg=self.colors['bg_dark'])
+        main_container.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
         
-        # Title bar
-        title_frame = tk.Frame(main_container, bg='#1e1e1e')
-        title_frame.pack(fill=tk.X, pady=(0, 10))
-        title_label = tk.Label(title_frame, text="🖐️ Hand Gesture Recognition System", 
-                               font=('Segoe UI', 18, 'bold'), 
-                               bg='#1e1e1e', fg='#4CAF50')
-        title_label.pack(side=tk.LEFT)
+        # Title bar with high-tech styling
+        title_frame = tk.Frame(main_container, bg=self.colors['bg_dark'], height=70)
+        title_frame.pack(fill=tk.X, pady=(0, 15))
         
-        # Video panel with border
-        video_frame = tk.Frame(main_container, bg='#2d2d2d', relief=tk.RAISED, bd=2)
-        video_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        # Title with glow effect
+        title_container = tk.Frame(title_frame, bg=self.colors['bg_dark'])
+        title_container.pack(side=tk.LEFT)
         
-        self.video_label = tk.Label(video_frame, bg='#000000', text="Initializing camera...")
-        self.video_label.pack(padx=5, pady=5)
+        title_label = tk.Label(title_container, 
+                              text="⚡ ACERA",
+                              font=('Segoe UI', 24, 'bold'),
+                              bg=self.colors['bg_dark'],
+                              fg=self.colors['accent_cyan'])
+        title_label.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Status panel with modern layout
-        status_frame = tk.Frame(main_container, bg='#2d2d2d', relief=tk.FLAT)
-        status_frame.pack(fill=tk.X, pady=(0, 10))
+        subtitle_label = tk.Label(title_container,
+                                 text="Hand Gesture Control System",
+                                 font=('Segoe UI', 14),
+                                 bg=self.colors['bg_dark'],
+                                 fg=self.colors['text_secondary'])
+        subtitle_label.pack(side=tk.LEFT)
         
-        # Create info boxes
-        info_container = tk.Frame(status_frame, bg='#2d2d2d')
-        info_container.pack(fill=tk.X, padx=10, pady=10)
+        # Action buttons in title bar
+        button_frame = tk.Frame(title_frame, bg=self.colors['bg_dark'])
+        button_frame.pack(side=tk.RIGHT, padx=10)
         
-        # Gesture display (larger, prominent)
-        gesture_box = tk.Frame(info_container, bg='#3d3d3d', relief=tk.RAISED, bd=1)
-        gesture_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
+        # Gesture reference button
+        self.gesture_ref_button = tk.Button(button_frame,
+                                           text="📋 Gestures",
+                                           font=('Segoe UI', 11, 'bold'),
+                                           bg=self.colors['bg_medium'],
+                                           fg=self.colors['accent_cyan'],
+                                           activebackground=self.colors['bg_light'],
+                                           activeforeground=self.colors['accent_cyan'],
+                                           borderwidth=0,
+                                           padx=15,
+                                           pady=8,
+                                           command=self.on_gesture_ref_click)
+        self.gesture_ref_button.pack(side=tk.LEFT, padx=5)
         
-        tk.Label(gesture_box, text="GESTURE", font=('Segoe UI', 9, 'bold'), 
-                bg='#3d3d3d', fg='#888888').pack(anchor='w', padx=10, pady=(10, 2))
+        # Test mode button
+        self.test_mode_button = tk.Button(button_frame,
+                                         text="🧪 Test Mode",
+                                         font=('Segoe UI', 11, 'bold'),
+                                         bg=self.colors['accent_blue'],
+                                         fg='#ffffff',
+                                         activebackground=self.colors['accent_light'],
+                                         borderwidth=0,
+                                         padx=15,
+                                         pady=8,
+                                         command=self.on_test_mode_click)
+        self.test_mode_button.pack(side=tk.LEFT, padx=5)
+        
+        self.test_mode_handler = None
+        self.gesture_ref_handler = None
+        
+        # Video panel with sleek border
+        video_container = tk.Frame(main_container, bg=self.colors['bg_medium'])
+        video_container.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        
+        # Border effect
+        border_frame = tk.Frame(video_container, bg=self.colors['accent_cyan'], height=2)
+        border_frame.pack(fill=tk.X)
+        
+        video_frame = tk.Frame(video_container, bg='#000000')
+        video_frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        
+        self.video_label = tk.Label(video_frame, bg='#000000', text="Initializing camera...",
+                                    fg=self.colors['accent_cyan'],
+                                    font=('Segoe UI', 12))
+        self.video_label.pack(expand=True)
+        
+        # Status panel with high-tech cards
+        status_frame = tk.Frame(main_container, bg=self.colors['bg_dark'])
+        status_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        info_container = tk.Frame(status_frame, bg=self.colors['bg_dark'])
+        info_container.pack(fill=tk.X, padx=0, pady=0)
+        
+        # Create sleek info cards
         self.gesture_var = tk.StringVar(value="None Detected")
-        self.gesture_label = tk.Label(gesture_box, textvariable=self.gesture_var, 
-                                font=('Segoe UI', 14, 'bold'), 
-                                bg='#3d3d3d', fg='#4CAF50', anchor='w')
-        self.gesture_label.pack(anchor='w', padx=10, pady=(0, 10))
+        gesture_card = self.create_info_card(info_container, "GESTURE", self.gesture_var, 
+                                            self.colors['accent_cyan'], 0)
         
-        # Confidence display
-        conf_box = tk.Frame(info_container, bg='#3d3d3d', relief=tk.RAISED, bd=1)
-        conf_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
-        
-        tk.Label(conf_box, text="CONFIDENCE", font=('Segoe UI', 9, 'bold'), 
-                bg='#3d3d3d', fg='#888888').pack(anchor='w', padx=10, pady=(10, 2))
         self.conf_var = tk.StringVar(value="0%")
-        self.conf_label = tk.Label(conf_box, textvariable=self.conf_var, 
-                             font=('Segoe UI', 14, 'bold'), 
-                             bg='#3d3d3d', fg='#FFC107', anchor='w')
-        self.conf_label.pack(anchor='w', padx=10, pady=(0, 10))
+        conf_card = self.create_info_card(info_container, "CONFIDENCE", self.conf_var,
+                                         self.colors['success'], 1)
         
-        # FPS display
-        fps_box = tk.Frame(info_container, bg='#3d3d3d', relief=tk.RAISED, bd=1)
-        fps_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
-        
-        tk.Label(fps_box, text="FPS", font=('Segoe UI', 9, 'bold'), 
-                bg='#3d3d3d', fg='#888888').pack(anchor='w', padx=10, pady=(10, 2))
         self.fps_var = tk.StringVar(value="0.0")
-        fps_label = tk.Label(fps_box, textvariable=self.fps_var, 
-                            font=('Segoe UI', 14, 'bold'), 
-                            bg='#3d3d3d', fg='#2196F3', anchor='w')
-        fps_label.pack(anchor='w', padx=10, pady=(0, 10))
+        fps_card = self.create_info_card(info_container, "FPS", self.fps_var,
+                                        self.colors['accent_light'], 2)
         
-        # Gesture reference panel
-        ref_frame = tk.Frame(main_container, bg='#2d2d2d', relief=tk.FLAT)
-        ref_frame.pack(fill=tk.X, pady=(0, 10))
+        # Store label references for dynamic color updates
+        self.gesture_label = None
+        self.conf_label = None
         
-        ref_title = tk.Label(ref_frame, text="📋 Available Gestures", 
-                            font=('Segoe UI', 11, 'bold'), 
-                            bg='#2d2d2d', fg='#ffffff', anchor='w')
-        ref_title.pack(anchor='w', padx=10, pady=(10, 5))
-        
-        gesture_list = tk.Frame(ref_frame, bg='#2d2d2d')
-        gesture_list.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
-        gestures_info = [
-            "👌 OK Sign  |  👍 Thumbs Up  |  ✌️ Peace Sign  |  🤘 Rock On",
-            "🤏 Pinch  |  ✋ Open Palm  |  ✊ Fist  |  👆 Point  |  1️⃣-5️⃣ Numbers"
-        ]
-        
-        for info in gestures_info:
-            tk.Label(gesture_list, text=info, font=('Segoe UI', 9), 
-                    bg='#2d2d2d', fg='#cccccc', anchor='w').pack(anchor='w', pady=2)
-        
-        # Debug log with scrollbar
-        log_frame = tk.Frame(main_container, bg='#2d2d2d', relief=tk.FLAT)
+        # Debug log with high-tech styling
+        log_frame = tk.Frame(main_container, bg=self.colors['bg_dark'])
         log_frame.pack(fill=tk.BOTH, expand=True)
         
-        log_title = tk.Label(log_frame, text="📝 System Log", 
-                            font=('Segoe UI', 11, 'bold'), 
-                            bg='#2d2d2d', fg='#ffffff', anchor='w')
-        log_title.pack(anchor='w', padx=10, pady=(0, 5))
+        log_header = tk.Frame(log_frame, bg=self.colors['bg_medium'], height=35)
+        log_header.pack(fill=tk.X)
         
-        log_container = tk.Frame(log_frame, bg='#1e1e1e')
-        log_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        log_title = tk.Label(log_header,
+                            text="⚡ SYSTEM LOG",
+                            font=('Segoe UI', 11, 'bold'),
+                            bg=self.colors['bg_medium'],
+                            fg=self.colors['accent_cyan'],
+                            anchor='w')
+        log_title.pack(side=tk.LEFT, padx=15, pady=8)
+        
+        log_container = tk.Frame(log_frame, bg=self.colors['bg_medium'])
+        log_container.pack(fill=tk.BOTH, expand=True)
         
         scrollbar = tk.Scrollbar(log_container)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.log_box = tk.Text(log_container, height=6, state='disabled',
-                              bg='#1e1e1e', fg='#00ff00',
+        self.log_box = tk.Text(log_container,
+                              height=6,
+                              state='disabled',
+                              bg='#0a1628',
+                              fg=self.colors['accent_cyan'],
                               font=('Consolas', 9),
                               yscrollcommand=scrollbar.set,
-                              wrap=tk.WORD)
-        self.log_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                              wrap=tk.WORD,
+                              insertbackground=self.colors['accent_cyan'],
+                              selectbackground=self.colors['bg_light'],
+                              selectforeground=self.colors['text_primary'])
+        self.log_box.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
         scrollbar.config(command=self.log_box.yview)
         
         # Internal vars
         self.queue = queue.Queue()
         self.running = False
+    
+    def create_info_card(self, parent, label_text, value_var, accent_color, index):
+        """Create a sleek high-tech info card"""
+        card = tk.Frame(parent, bg=self.colors['bg_medium'], relief=tk.FLAT)
+        card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=8)
+        
+        # Accent border
+        border = tk.Frame(card, bg=accent_color, height=3)
+        border.pack(fill=tk.X)
+        
+        content = tk.Frame(card, bg=self.colors['bg_medium'])
+        content.pack(fill=tk.BOTH, expand=True, padx=15, pady=12)
+        
+        # Label
+        label = tk.Label(content,
+                        text=label_text,
+                        font=('Segoe UI', 9, 'bold'),
+                        bg=self.colors['bg_medium'],
+                        fg=self.colors['text_muted'],
+                        anchor='w')
+        label.pack(anchor='w', pady=(0, 8))
+        
+        # Value
+        value_label = tk.Label(content,
+                              textvariable=value_var,
+                              font=('Segoe UI', 16, 'bold'),
+                              bg=self.colors['bg_medium'],
+                              fg=accent_color,
+                              anchor='w')
+        value_label.pack(anchor='w')
+        
+        # Store references for gesture and confidence
+        if label_text == "GESTURE":
+            self.gesture_label = value_label
+        elif label_text == "CONFIDENCE":
+            self.conf_label = value_label
+        
+        return card
+    
+    def set_test_mode_handler(self, handler):
+        """Set the test mode handler callback"""
+        self.test_mode_handler = handler
+    
+    def set_gesture_ref_handler(self, handler):
+        """Set the gesture reference handler callback"""
+        self.gesture_ref_handler = handler
+    
+    def on_test_mode_click(self):
+        """Handle test mode button click"""
+        if self.test_mode_handler:
+            self.test_mode_handler()
+    
+    def on_gesture_ref_click(self):
+        """Handle gesture reference button click"""
+        if self.gesture_ref_handler:
+            self.gesture_ref_handler()
 
     def update_frame(self, cv2_bgr_image):
         # convert BGR -> RGB -> PIL -> ImageTk
@@ -165,7 +262,7 @@ class SimpleUI:
         # Format gesture text nicely
         if gesture_text == 'none' or gesture_text == 'unknown':
             display_text = "None Detected"
-            color = '#888888'
+            color = self.colors['text_muted']
         else:
             # Special handling for common gesture names
             gesture_display_map = {
@@ -187,11 +284,12 @@ class SimpleUI:
                 display_text = f"Number {num}"
             else:
                 display_text = gesture_text.replace('_', ' ').title()
-            color = '#4CAF50'
+            color = self.colors['accent_cyan']
         
         self.gesture_var.set(display_text)
         # Update color dynamically
-        self.gesture_label.config(fg=color)
+        if self.gesture_label:
+            self.gesture_label.config(fg=color)
 
     def set_confidence(self, conf_text):
         try:
@@ -200,15 +298,16 @@ class SimpleUI:
             
             # Color based on confidence
             if conf_float >= 0.7:
-                color = '#4CAF50'  # Green
+                color = self.colors['success']  # Green-cyan
             elif conf_float >= 0.4:
-                color = '#FFC107'  # Yellow
+                color = self.colors['warning']  # Amber
             else:
-                color = '#F44336'  # Red
+                color = self.colors['error']  # Red
             
             self.conf_var.set(conf_percent)
             # Update color dynamically
-            self.conf_label.config(fg=color)
+            if self.conf_label:
+                self.conf_label.config(fg=color)
         except:
             self.conf_var.set("0%")
 

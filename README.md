@@ -5,9 +5,11 @@ A complete Python prototype demonstrating hand gesture recognition and OS contro
 ## Features
 
 - **Real-time hand tracking** using MediaPipe Hands with 21-landmark detection
-- **Heuristic gesture recognition** (pinch, fist, open hand, index pointing)
+- **Expanded gesture recognition** - 8+ gestures including pinch, fist, open palm, thumbs up, peace sign, OK sign, rock on, and numbers
 - **OS control** - mouse movement and clicks via pyautogui
-- **Live UI** - Tkinter interface showing camera feed, gesture labels, confidence, and FPS
+- **Visual feedback** - Color-coded circles around fingertips that fill during clicks for easy visibility
+- **Live UI** - Modern dark-themed Tkinter interface with gesture display and confidence indicators
+- **Test Mode** - Built-in testing interface with 5 tasks and 5-question survey for ACERA project
 - **Data logging** - CSV logger for collecting labeled gesture samples
 - **ML training stub** - KNN classifier for future machine learning integration
 
@@ -73,6 +75,26 @@ Or if Python is not in PATH:
 ```
 
 Press `q` or close the window to quit.
+
+### Testing Mode (ACERA Project)
+
+Click the **"🧪 Start Test Mode"** button in the top-right corner to access the testing interface:
+
+**5 Test Tasks:**
+1. **Move Mouse** - Hover over a button using index finger pointing
+2. **Single Click** - Use pinch gesture to click a button
+3. **Right Click** - Make a fist to perform a right-click
+4. **Drag and Drop** - Pinch to click, drag, and release
+5. **Multiple Clicks** - Click multiple buttons in sequence
+
+**5 Survey Questions:**
+- Ease of mouse movement (1-5 scale)
+- Click accuracy (1-5 scale)
+- Lag/delay experience (Yes/No)
+- Intuitiveness (1-5 scale)
+- Would use for everyday interaction (Yes/No)
+
+Test results are automatically saved to `test_results/` directory as JSON files.
 
 ## Module Overview
 

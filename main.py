@@ -21,6 +21,9 @@ from controller import ActionController
 
 from ui import SimpleUI
 
+from test_mode import TestMode
+from gesture_reference import GestureReference
+
 
 
 # Configuration
@@ -189,6 +192,7 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
 
             gesture_label = 'none'
             confidence = 0.0
+            click_strength = 0.0  # For visual feedback
 
             # process first detected hand only for R&D prototype
             hand_landmarks_obj = None
@@ -202,9 +206,25 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                 # heuristic classifier
                 gesture_label, confidence, extra = heuristic_gesture_classifier(lms)
                 
+                # Calculate click strength for visual feedback
+                if gesture_label == 'pinch':
+                    # Use pinch distance to determine click strength (closer = stronger)
+                    pinch_dist = extra.get('pinch_distance', 0.05)
+                    click_strength = max(0.0, min(1.0, 1.0 - (pinch_dist / 0.05)))
+                elif gesture_label == 'fist':
+                    # Use confidence for fist click strength
+                    click_strength = confidence
+                elif gesture_label == 'index_point':
+                    # Light feedback for pointing
+                    click_strength = confidence * 0.5
+                
                 # Draw gesture text overlay on frame
                 if gesture_label != 'unknown' and confidence > 0.3:
                     annotated = tracker.draw_gesture_text(annotated, gesture_label, confidence, hand_landmarks_obj)
+                
+                # Draw click feedback circles around fingertips
+                if gesture_label in ['pinch', 'fist', 'index_point'] and click_strength > 0.1:
+                    annotated = tracker.draw_click_feedback(annotated, hand_landmarks_obj, gesture_label, click_strength)
                 
                 # call controller to perform action
                 try:
@@ -218,6 +238,7 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                 extra = {}
                 gesture_label = 'none'
                 confidence = 0.0
+                click_strength = 0.0
 
             # Queue updates for UI (thread-safe)
             update_data = {
@@ -225,7 +246,8 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                 'frame': annotated,
                 'gesture': gesture_label,
                 'confidence': f"{confidence:.2f}",
-                'fps': f"{fps_smooth:.1f}"
+                'fps': f"{fps_smooth:.1f}",
+                'click_strength': click_strength  # For test mode tracking
             }
             
             try:
@@ -283,9 +305,20 @@ def main_loop():
     datalog = DataLogger(path='gesture_samples.csv')
 
     stop_event = threading.Event()
+    
+    # Initialize test mode
+    test_mode = TestMode(ui.root, 
+                        on_task_complete_callback=None,  # Can add callback if needed
+                        on_test_complete_callback=lambda results: ui.log(f"Test completed. Results saved."))
+    ui.set_test_mode_handler(test_mode.show_test_window)
+    
+    # Initialize gesture reference
+    gesture_ref = GestureReference(ui.root)
+    ui.set_gesture_ref_handler(lambda: gesture_ref.show_popup())
 
     ui.start()
     ui.log("UI initialized. Starting camera thread...")
+    ui.log("Click 'Start Test Mode' button to begin ACERA testing interface.")
 
     # Start camera processing in background thread
     camera_thread = threading.Thread(target=process_camera_loop, 
