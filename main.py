@@ -69,12 +69,12 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
-    # 2. Middle finger point (high priority - right-click action)
-    # More reliable than fist - only middle finger extended, others closed
-    middle_point, middle_conf = is_middle_point(landmarks, extend_threshold=0.12, close_threshold=0.08)
-    if middle_point:
-        name = 'middle_point'
-        conf = middle_conf
+    # 2. Pinky finger point (high priority - right-click action)
+    # More reliable than fist - only pinky finger extended, others closed
+    pinky_point, pinky_conf = is_pinky_point(landmarks, extend_threshold=0.12, close_threshold=0.08)
+    if pinky_point:
+        name = 'pinky_point'
+        conf = pinky_conf
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
