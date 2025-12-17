@@ -97,8 +97,8 @@ class TestMode:
             {
                 'id': 3,
                 'title': 'Task 3: Right Click',
-                'description': 'Extend only your middle finger (others closed) to perform a right-click on the button below.',
-                'instruction': 'Point with middle finger to right-click',
+                'description': 'Extend only your pinky finger (others closed) to perform a right-click on the button below.',
+                'instruction': 'Point with pinky finger to right-click',
                 'target_type': 'right_click',
                 'target_id': 'task3_button'
             },
@@ -266,7 +266,7 @@ class TestMode:
     
     def render_task3(self, parent, task):
         """Task 3: Right click"""
-        label = tk.Label(parent, text="Extend middle finger (others closed) to right-click:",
+        label = tk.Label(parent, text="Extend pinky finger (others closed) to right-click:",
                         font=('Segoe UI', 14), bg='#0a1628', fg='#B0BEC5')
         label.pack(pady=50)
         

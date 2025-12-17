@@ -24,9 +24,9 @@ class GestureReference:
                 'action': 'Left Click / Drag',
                 'color': '#00D9FF'  # Cyan blue
             },
-            'Middle Point': {
-                'icon': '🖕',
-                'description': 'Middle finger extended, others closed',
+            'Pinky Point': {
+                'icon': '👆',
+                'description': 'Pinky finger extended, others closed',
                 'action': 'Right Click',
                 'color': '#FF5252'  # Red for right-click
             },

@@ -5,7 +5,7 @@ A complete Python prototype demonstrating hand gesture recognition and OS contro
 ## Features
 
 - **Real-time hand tracking** using MediaPipe Hands with 21-landmark detection
-- **Expanded gesture recognition** - 8+ gestures including pinch, middle finger point (right-click), open palm, thumbs up, peace sign, OK sign, rock on, and numbers
+- **Expanded gesture recognition** - 8+ gestures including pinch, pinky finger point (right-click), open palm, thumbs up, peace sign, OK sign, rock on, and numbers
 - **OS control** - mouse movement and clicks via pyautogui
 - **Visual feedback** - Color-coded circles around fingertips that fill during clicks for easy visibility
 - **Live UI** - Modern dark-themed Tkinter interface with gesture display and confidence indicators
@@ -83,7 +83,7 @@ Click the **"🧪 Start Test Mode"** button in the top-right corner to access th
 **5 Test Tasks:**
 1. **Move Mouse** - Hover over a button using index finger pointing
 2. **Single Click** - Use pinch gesture to click a button
-3. **Right Click** - Extend only your middle finger (others closed) to perform a right-click
+3. **Right Click** - Extend only your pinky finger (others closed) to perform a right-click
 4. **Drag and Drop** - Pinch to click, drag, and release
 5. **Multiple Clicks** - Click multiple buttons in sequence
 
@@ -109,7 +109,7 @@ Test results are automatically saved to `test_results/` directory as JSON files.
 
 - **Index pointing** (open hand with extended index) → Move mouse cursor
 - **Pinch** (thumb + index close) → Left-click and drag
-- **Middle Finger Point** → Right-click (more reliable than fist - only middle finger extended, others closed)
+- **Pinky Finger Point** → Right-click (more reliable than fist - only pinky finger extended, others closed)
 - **Open hand** → Stop dragging
 
 ## Testing Individual Modules

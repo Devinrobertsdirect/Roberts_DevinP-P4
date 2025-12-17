@@ -180,9 +180,9 @@ class HandTracker:
             # Highlight thumb and index for pinch
             finger_indices = [4, 8]  # thumb tip, index tip
             circle_color = (255, 100, 100)  # Light blue/cyan
-        elif gesture_name == 'middle_point':
-            # Highlight middle finger for right click
-            finger_indices = [12]  # Middle finger tip
+        elif gesture_name == 'pinky_point':
+            # Highlight pinky finger for right click
+            finger_indices = [20]  # Pinky finger tip
             circle_color = (100, 100, 255)  # Red/pink
         elif gesture_name == 'fist':  # Legacy support
             # Highlight all fingertips for fist (right click)

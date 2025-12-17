@@ -14,7 +14,7 @@ from camera import Webcam
 
 from tracker import HandTracker
 
-from gestures import (is_pinch, is_open_hand, is_fist, is_middle_point, is_thumbs_up, is_peace_sign, 
+from gestures import (is_pinch, is_open_hand, is_fist, is_pinky_point, is_thumbs_up, is_peace_sign, 
                       is_ok_sign, is_rock_on, is_number_gesture, compute_features, DataLogger)
 
 from controller import ActionController
@@ -212,8 +212,8 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                     # Use pinch distance to determine click strength (closer = stronger)
                     pinch_dist = extra.get('pinch_distance', 0.05)
                     click_strength = max(0.0, min(1.0, 1.0 - (pinch_dist / 0.05)))
-                elif gesture_label == 'middle_point':
-                    # Use confidence for middle point click strength
+                elif gesture_label == 'pinky_point':
+                    # Use confidence for pinky point click strength
                     click_strength = confidence
                 elif gesture_label == 'index_point':
                     # Light feedback for pointing
@@ -224,7 +224,7 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                     annotated = tracker.draw_gesture_text(annotated, gesture_label, confidence, hand_landmarks_obj)
                 
                 # Draw click feedback circles around fingertips
-                if gesture_label in ['pinch', 'middle_point', 'index_point'] and click_strength > 0.1:
+                if gesture_label in ['pinch', 'pinky_point', 'index_point'] and click_strength > 0.1:
                     annotated = tracker.draw_click_feedback(annotated, hand_landmarks_obj, gesture_label, click_strength)
                 
                 # call controller to perform action
