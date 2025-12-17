@@ -354,10 +354,34 @@ class TestMode:
                 self.complete_task(True)
     
     def complete_task(self, success):
-        """Mark current task as complete"""
+        """Mark current task as complete (with minimum duration protection)"""
         if self.current_task >= len(self.get_tasks()):
             return
         
+        # Check if minimum time has elapsed
+        if self.task_start_time:
+            elapsed = time.time() - self.task_start_time
+            if elapsed < self.min_task_duration:
+                # Schedule completion after minimum duration
+                remaining_time = self.min_task_duration - elapsed
+                if not self.task_completion_pending:
+                    self.task_completion_pending = True
+                    self.pending_success = success
+                    self.test_window.after(int(remaining_time * 1000), self._delayed_task_completion)
+                return
+        
+        self._do_task_completion(success)
+    
+    def _delayed_task_completion(self):
+        """Complete task after minimum duration has elapsed"""
+        self.task_completion_pending = False
+        if hasattr(self, 'pending_success'):
+            success = self.pending_success
+            delattr(self, 'pending_success')
+            self._do_task_completion(success)
+    
+    def _do_task_completion(self, success):
+        """Actually complete the task and move to next"""
         task = self.get_tasks()[self.current_task]
         duration = time.time() - self.task_start_time if self.task_start_time else 0
         
@@ -372,9 +396,16 @@ class TestMode:
         if self.on_task_complete:
             self.on_task_complete(task['id'], success, duration)
         
-        # Move to next task
+        # Small delay before showing next task for smooth transition
         self.current_task += 1
-        self.test_window.after(1500, self.show_task_screen)  # Brief pause before next task
+        self.test_window.after(300, self._move_to_next_task)
+    
+    def _move_to_next_task(self):
+        """Move to next task or survey"""
+        if self.current_task < len(self.get_tasks()):
+            self.show_task_screen()
+        else:
+            self.show_survey()
     
     def skip_task(self):
         """Skip current task"""
