@@ -541,16 +541,34 @@ class TestMode:
         canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         scrollbar.pack(side="right", fill="y")
         
-        # Submit button with high-tech styling
-        submit_btn = tk.Button(self.test_window, text="⚡ SUBMIT SURVEY",
+        # Submit button with high-tech styling (initially disabled until minimum time)
+        self.submit_btn = tk.Button(self.test_window, text="⚡ SUBMIT SURVEY",
                               font=('Segoe UI', 14, 'bold'),
-                              bg='#0066FF', fg='#ffffff',
+                              bg='#2a2f4a', fg='#64748B',  # Disabled appearance
                               activebackground='#4A9EFF',
                               relief=tk.FLAT,
                               borderwidth=0,
                               command=self.submit_survey,
-                              width=20, height=2)
-        submit_btn.pack(pady=20)
+                              width=20, height=2,
+                              state='disabled')
+        self.submit_btn.pack(pady=20)
+        
+        # Enable submit button after minimum viewing time for all questions
+        questions = self.get_survey_questions()
+        if questions and hasattr(self, 'survey_question_times'):
+            # Calculate max time needed (when last question was shown)
+            last_question_time = max(self.survey_question_times.values())
+            elapsed = time.time() - last_question_time
+            if elapsed < 3.0:
+                remaining_ms = int((3.0 - elapsed) * 1000)
+                self.test_window.after(remaining_ms, self._enable_submit_button)
+            else:
+                self._enable_submit_button()
+    
+    def _enable_submit_button(self):
+        """Enable the submit button with visual feedback"""
+        if hasattr(self, 'submit_btn'):
+            self.submit_btn.config(state='normal', bg='#0066FF', fg='#ffffff')
     
     def get_survey_questions(self):
         """Return survey questions"""
