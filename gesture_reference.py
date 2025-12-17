@@ -24,11 +24,11 @@ class GestureReference:
                 'action': 'Left Click / Drag',
                 'color': '#00D9FF'  # Cyan blue
             },
-            'Fist': {
-                'icon': '✊',
-                'description': 'Closed hand',
+            'Middle Point': {
+                'icon': '🖕',
+                'description': 'Middle finger extended, others closed',
                 'action': 'Right Click',
-                'color': '#0066FF'  # Blue
+                'color': '#FF5252'  # Red for right-click
             },
             'Open Palm': {
                 'icon': '✋',

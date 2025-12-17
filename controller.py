@@ -203,9 +203,9 @@ class ActionController:
 
 
 
-        elif gesture_name == 'fist':
+        elif gesture_name == 'middle_point' or gesture_name == 'fist':
 
-            # quick right click
+            # middle finger point (or legacy fist) -> right click
 
             self.right_click()
 

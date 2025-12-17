@@ -165,6 +165,8 @@ def is_fist(landmarks, fist_threshold=0.07):
 
     Slightly more forgiving threshold to catch fist gestures reliably.
 
+    NOTE: Deprecated - use is_middle_point for right-click instead.
+
     """
 
     tips = np.array([landmarks[TIP_IDS['index_tip']],
@@ -180,6 +182,55 @@ def is_fist(landmarks, fist_threshold=0.07):
     avg_dist = float(np.mean([normalized_distance(t, wrist) for t in tips]))
 
     return (avg_dist < fist_threshold), avg_dist
+
+
+def is_middle_point(landmarks, extend_threshold=0.12, close_threshold=0.08):
+    """
+    Middle finger point: Only middle finger extended, all other fingers closed.
+    This is a more reliable gesture for right-click than fist.
+    
+    Returns: (is_middle_point, confidence)
+    """
+    index_tip = landmarks[TIP_IDS['index_tip']]
+    middle_tip = landmarks[TIP_IDS['middle_tip']]
+    ring_tip = landmarks[TIP_IDS['ring_tip']]
+    pinky_tip = landmarks[TIP_IDS['pinky_tip']]
+    thumb_tip = landmarks[TIP_IDS['thumb_tip']]
+    wrist = landmarks[TIP_IDS['wrist']]
+    
+    # Middle finger extended (far from wrist)
+    middle_extended = normalized_distance(middle_tip, wrist) > extend_threshold
+    
+    # All other fingers closed (close to wrist)
+    index_closed = normalized_distance(index_tip, wrist) < close_threshold
+    ring_closed = normalized_distance(ring_tip, wrist) < close_threshold
+    pinky_closed = normalized_distance(pinky_tip, wrist) < close_threshold
+    thumb_closed = normalized_distance(thumb_tip, wrist) < close_threshold
+    
+    # Check that middle is clearly the furthest extended
+    middle_dist = normalized_distance(middle_tip, wrist)
+    other_dists = [
+        normalized_distance(index_tip, wrist),
+        normalized_distance(ring_tip, wrist),
+        normalized_distance(pinky_tip, wrist),
+        normalized_distance(thumb_tip, wrist)
+    ]
+    max_other_dist = max(other_dists)
+    
+    # Middle should be significantly more extended than others
+    middle_dominates = middle_dist > max_other_dist + 0.04
+    
+    is_middle_point_gesture = middle_extended and index_closed and ring_closed and pinky_closed and middle_dominates
+    
+    # Confidence based on how extended middle is and how closed others are
+    if is_middle_point_gesture:
+        extend_score = min(1.0, (middle_dist - extend_threshold) / 0.08)  # Normalize 0.12-0.20 range
+        close_score = min(1.0, (close_threshold - max_other_dist) / close_threshold)
+        confidence = float((extend_score + close_score) / 2.0)
+    else:
+        confidence = 0.0
+    
+    return is_middle_point_gesture, confidence
 
 
 def is_thumbs_up(landmarks, thumb_up_threshold=0.15):

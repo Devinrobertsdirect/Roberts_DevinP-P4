@@ -14,7 +14,7 @@ from camera import Webcam
 
 from tracker import HandTracker
 
-from gestures import (is_pinch, is_open_hand, is_fist, is_thumbs_up, is_peace_sign, 
+from gestures import (is_pinch, is_open_hand, is_fist, is_middle_point, is_thumbs_up, is_peace_sign, 
                       is_ok_sign, is_rock_on, is_number_gesture, compute_features, DataLogger)
 
 from controller import ActionController
@@ -69,11 +69,12 @@ def heuristic_gesture_classifier(landmarks):
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
-    # 2. Fist (high priority - mouse action)
-    fist, avg_fist = is_fist(landmarks, fist_threshold=0.07)  # More forgiving threshold
-    if fist:
-        name = 'fist'
-        conf = float(min(1.0, 0.6 + (0.06 - avg_fist) * 10))
+    # 2. Middle finger point (high priority - right-click action)
+    # More reliable than fist - only middle finger extended, others closed
+    middle_point, middle_conf = is_middle_point(landmarks, extend_threshold=0.12, close_threshold=0.08)
+    if middle_point:
+        name = 'middle_point'
+        conf = middle_conf
         extra['gesture_type'] = 'action'
         return name, conf, extra
 
@@ -211,8 +212,8 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                     # Use pinch distance to determine click strength (closer = stronger)
                     pinch_dist = extra.get('pinch_distance', 0.05)
                     click_strength = max(0.0, min(1.0, 1.0 - (pinch_dist / 0.05)))
-                elif gesture_label == 'fist':
-                    # Use confidence for fist click strength
+                elif gesture_label == 'middle_point':
+                    # Use confidence for middle point click strength
                     click_strength = confidence
                 elif gesture_label == 'index_point':
                     # Light feedback for pointing
@@ -223,7 +224,7 @@ def process_camera_loop(ui, cam, tracker, controller, stop_event):
                     annotated = tracker.draw_gesture_text(annotated, gesture_label, confidence, hand_landmarks_obj)
                 
                 # Draw click feedback circles around fingertips
-                if gesture_label in ['pinch', 'fist', 'index_point'] and click_strength > 0.1:
+                if gesture_label in ['pinch', 'middle_point', 'index_point'] and click_strength > 0.1:
                     annotated = tracker.draw_click_feedback(annotated, hand_landmarks_obj, gesture_label, click_strength)
                 
                 # call controller to perform action
