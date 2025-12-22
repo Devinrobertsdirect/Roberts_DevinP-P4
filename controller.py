@@ -218,20 +218,41 @@ class ActionController:
             self.stop_drag()
         
         elif gesture_name.startswith('number_'):
-            # Number gestures - could map to keyboard numbers or custom actions
+            # Number gestures - scroll actions
             try:
                 number = int(gesture_name.split('_')[1])
-                # Example: scroll based on number
                 if number == 1:
-                    self.scroll(1)
+                    self.scroll(3)  # Scroll up
                 elif number == 2:
-                    self.scroll(-1)
+                    self.scroll(-3)  # Scroll down
+                elif number == 3:
+                    self.scroll(5)  # Scroll up more
+                elif number == 4:
+                    self.scroll(-5)  # Scroll down more
+                elif number == 5:
+                    # Page up/down could be mapped here
+                    pyautogui.press('pageup')
             except:
                 pass
+        
+        elif gesture_name == 'thumbs_up':
+            # Thumbs up - Escape key (common cancel/back action)
+            self.press_key('escape')
+        
+        elif gesture_name == 'peace_sign':
+            # Peace sign - Enter key
+            self.press_key('enter')
+        
+        elif gesture_name == 'ok_sign':
+            # OK sign - Space key
+            self.press_key('space')
+        
+        elif gesture_name == 'rock_on':
+            # Rock on - Tab key
+            self.press_key('tab')
 
         else:
-
-            pass  # Symbol gestures (thumbs_up, peace_sign, ok_sign, rock_on) and unknown gestures don't trigger actions
+            pass  # Unknown gestures don't trigger actions
 
 
 

@@ -45,26 +45,32 @@ class GestureReference:
             'Thumbs Up': {
                 'icon': '👍',
                 'description': 'Thumb extended up',
-                'action': 'Symbol Gesture',
+                'action': 'Escape Key',
                 'color': '#00BCD4'  # Cyan
             },
             'Peace Sign': {
                 'icon': '✌️',
                 'description': 'Index and middle extended',
-                'action': 'Symbol Gesture',
+                'action': 'Enter Key',
                 'color': '#03A9F4'  # Light blue
             },
             'OK Sign': {
                 'icon': '👌',
                 'description': 'Thumb and index circle',
-                'action': 'Symbol Gesture',
+                'action': 'Space Key',
                 'color': '#0097A7'  # Teal
             },
             'Rock On': {
                 'icon': '🤘',
                 'description': 'Index and pinky extended',
-                'action': 'Symbol Gesture',
+                'action': 'Tab Key',
                 'color': '#00ACC1'  # Cyan
+            },
+            'Numbers 1-5': {
+                'icon': '✋',
+                'description': 'Show 1-5 fingers',
+                'action': 'Scroll (1=Up, 2=Down, etc.)',
+                'color': '#9C27B0'  # Purple
             }
         }
     

@@ -60,8 +60,8 @@ class SimpleUI:
         title_label.pack(side=tk.LEFT, padx=(0, 10))
         
         subtitle_label = tk.Label(title_container,
-                                 text="Hand Gesture Control System",
-                                 font=('Segoe UI', 14),
+                                 text="Gesture Control",
+                                 font=('Segoe UI', 12),
                                  bg=self.colors['bg_dark'],
                                  fg=self.colors['text_secondary'])
         subtitle_label.pack(side=tk.LEFT)

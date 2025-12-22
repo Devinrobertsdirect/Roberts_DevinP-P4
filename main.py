@@ -320,8 +320,7 @@ def main_loop():
     ui.set_gesture_ref_handler(lambda: gesture_ref.show_popup())
 
     ui.start()
-    ui.log("UI initialized. Starting camera thread...")
-    ui.log("Click 'Start Test Mode' button to begin ACERA testing interface.")
+    ui.log("Camera initialized. Ready to use gestures.")
 
     # Start camera processing in background thread
     camera_thread = threading.Thread(target=process_camera_loop, 

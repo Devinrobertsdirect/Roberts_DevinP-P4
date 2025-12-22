@@ -85,13 +85,13 @@ class TestMode:
             self.show_survey()
     
     def get_tasks(self):
-        """Return list of 5 test tasks"""
+        """Return list of simplified 3 essential tasks"""
         return [
             {
                 'id': 1,
-                'title': 'Task 1: Move Mouse',
-                'description': 'Move your index finger to move the mouse cursor. Try to hover over the green button below.',
-                'instruction': 'Extend your index finger and move it to control the mouse',
+                'title': 'Move Mouse',
+                'description': 'Point with your index finger to move the cursor',
+                'instruction': '👆 Extend index finger to move mouse',
                 'target_type': 'hover',
                 'target_id': 'task1_button'
             },
@@ -177,10 +177,6 @@ class TestMode:
             self.render_task2(task_area, task)
         elif task['id'] == 3:
             self.render_task3(task_area, task)
-        elif task['id'] == 4:
-            self.render_task4(task_area, task)
-        elif task['id'] == 5:
-            self.render_task5(task_area, task)
         
         # Progress and controls with high-tech styling
         footer = tk.Frame(self.test_window, bg='#1a1f3a', height=60)
@@ -189,7 +185,7 @@ class TestMode:
         left_frame = tk.Frame(footer, bg='#1a1f3a')
         left_frame.pack(side=tk.LEFT, padx=15)
         
-        progress_text = f"TASK {task['id']} / 5"
+        progress_text = f"Step {task['id']} / 3"
         progress_label = tk.Label(left_frame, text=progress_text,
                                  font=('Segoe UI', 11, 'bold'),
                                  bg='#1a1f3a', fg='#00D9FF')
