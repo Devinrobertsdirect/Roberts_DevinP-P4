@@ -14,7 +14,7 @@ from gesture_reference import GestureReference
 
 class TestMode:
     """
-    Test mode interface with 5 tasks and 5 questions for ACERA project.
+    Test mode interface with 3 essential tasks for ACERA project.
     Tests gesture control capabilities and collects telemetry data.
     """
     
@@ -111,22 +111,6 @@ class TestMode:
                 'target_type': 'right_click',
                 'target_id': 'task3_button'
             },
-            {
-                'id': 4,
-                'title': 'Task 4: Drag and Drop',
-                'description': 'Use pinch to click and hold, then drag the circle to the target area.',
-                'instruction': 'Pinch to click, move while holding, release pinch to drop',
-                'target_type': 'drag',
-                'target_id': 'task4_drag'
-            },
-            {
-                'id': 5,
-                'title': 'Task 5: Multiple Clicks',
-                'description': 'Click all three buttons below using pinch gestures.',
-                'instruction': 'Click each button in sequence using pinch gestures',
-                'target_type': 'multi_click',
-                'target_id': 'task5_buttons'
-            }
         ]
     
     def render_task(self, task):
@@ -290,64 +274,6 @@ class TestMode:
         # Bind right click
         self.task3_button.bind("<Button-3>", lambda e: self.complete_task(True))
         self.task3_clicked = False
-    
-    def render_task4(self, parent, task):
-        """Task 4: Drag and drop"""
-        canvas_frame = tk.Frame(parent, bg='#0a1628')
-        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-        
-        label = tk.Label(canvas_frame, text="Drag the circle to the target area using pinch:",
-                        font=('Segoe UI', 14), bg='#0a1628', fg='#B0BEC5')
-        label.pack()
-        
-        self.task4_canvas = tk.Canvas(canvas_frame, bg='#1a1f3a', width=800, height=400, 
-                                      highlightthickness=2, highlightbackground='#00D9FF')
-        self.task4_canvas.pack(pady=20)
-        
-        # Draw drag source and target with high-tech colors
-        self.task4_circle = self.task4_canvas.create_oval(50, 150, 150, 250, 
-                                                          fill='#0066FF', outline='#00D9FF', width=3)
-        self.task4_target = self.task4_canvas.create_rectangle(600, 100, 750, 300,
-                                                               fill='#00E676', outline='#00D9FF', width=3, 
-                                                               stipple='gray50')
-        
-        self.task4_dragging = False
-        self.task4_dropped = False
-        self.task4_circle_pos = [100, 200]
-    
-    def render_task5(self, parent, task):
-        """Task 5: Multiple clicks"""
-        label = tk.Label(parent, text="Click all three buttons using pinch gestures:",
-                        font=('Segoe UI', 14), bg='#0a1628', fg='#B0BEC5')
-        label.pack(pady=30)
-        
-        button_frame = tk.Frame(parent, bg='#0a1628')
-        button_frame.pack(expand=True)
-        
-        self.task5_buttons = []
-        self.task5_clicked = [False, False, False]
-        
-        colors = ['#0066FF', '#4A9EFF', '#00D9FF']  # High-tech blues
-        for i in range(3):
-            btn = tk.Button(button_frame, text=f"Button {i+1}",
-                           font=('Segoe UI', 14, 'bold'),
-                           bg=colors[i], fg='#ffffff',
-                           activebackground=colors[i],
-                           width=15, height=2,
-                           relief=tk.FLAT,
-                           borderwidth=0,
-                           command=lambda idx=i: self.handle_task5_click(idx))
-            btn.pack(pady=10)
-            self.task5_buttons.append(btn)
-    
-    def handle_task5_click(self, idx):
-        """Handle task 5 button click"""
-        if not self.task5_clicked[idx]:
-            self.task5_clicked[idx] = True
-            self.task5_buttons[idx].config(bg='#00E676', state='disabled', fg='#0a1628')
-            
-            if all(self.task5_clicked):
-                self.complete_task(True)
     
     def complete_task(self, success):
         """Mark current task as complete (with minimum duration protection)"""
